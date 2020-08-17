@@ -1,4 +1,5 @@
 import psycopg2
+import pandas as pd
 
 from psycopg2.extras import execute_values
 from config import user, password, dbname
@@ -32,6 +33,7 @@ class DatabaseConnection:
     close_connection():
         Closes connection to cursor and database
     """
+
     def __init__(self, table_name):
         self.table_name = table_name
         try:
@@ -68,6 +70,7 @@ class DatabaseConnection:
                 create_table_command += f"{columns[i]} {dtypes[i]}, "
         create_table_command += f"{columns[-1]} {dtypes[-1]})"
         self.cursor.execute(create_table_command)
+
         print(f'Table "{self.table_name}" successfully created')
 
     def insert_rows(self, columns, entries):
@@ -87,27 +90,41 @@ class DatabaseConnection:
         execute_values(self.cursor, insert_command, entries)
         print(str(len(entries)) + ' records successfully inserted into database')
 
-    def query(self, row_id=None, row_number=10):
+    def query(self, order='asc', row_id=None, row_number=None, columns=None):
         """
-        Fetches first 10 rows of table by default, or can retrieve a specific ID in table
+        Fetches all table rows by default, or can retrieve a specific ID in table, returning in DataFrame form
 
+        :param columns: Columns present in table_name
+        :type columns: list
+        :param frame: Whether or not to return the data obtained in a DataFrame
+        :type frame: bool
+        :param order: Either ascending or descending order
+        :type order: str
         :param row_id: ID of row to be retrieved
         :type row_id: int
         :param row_number: Number of rows to be retrieved
         :type row_number: int
-        :return: None
+        :return: DataFrame of fetch results
+        :rtype: pd.DataFrame
         """
-        # If no row_id given, will return first 10 rows by default
+        # If no row_id or conditions given, will return first 10 rows by default
         if row_id is None:
-            print(f'First 10 rows of {self.table_name}: \n')
-            self.cursor.execute(f"SELECT * FROM {self.table_name} LIMIT {row_number}")
+            if order.lower() == 'desc':
+                order_by = "ORDER BY DESC"
+            else:
+                order_by = "ORDER BY ASC"
+            if row_number is not None:
+                self.cursor.execute(f"SELECT * FROM {self.table_name} LIMIT {row_number} {order_by}")
+            else:
+                self.cursor.execute(f"SELECT * FROM {self.table_name} {order_by}")
             table = self.cursor.fetchall()
-            for row in table:
-                print(f'{row} \n')
+            df = pd.DataFrame(table, columns=columns)
+            return df
         else:
             self.cursor.execute(f"SELECT * FROM {self.table_name} WHERE id={row_id}")
             row = self.cursor.fetchall()
-            print(f'Row {row_id} data: \n{row[0]}')
+            df = pd.DataFrame(row, columns=columns)
+            return df
 
     def update_row(self, columns, row_entry, row_id):
         """
@@ -128,17 +145,110 @@ class DatabaseConnection:
         self.cursor.execute(update_command)
         print(f'Row {row_id} of table "{self.table_name}" has been updated')
 
-    def drop_row(self, row_id):
+    def rename_table(self, new_table_name):
         """
-        Deletes the row mentioned from table passed in
+        Renames whole table
 
-        :param row_id: ID of row to be dropped
-        :type row_id: int
+        :param new_table_name: New name of table
+
         :return: None
         """
-        drop_row_command = f"DELETE FROM {self.table_name} WHERE id={row_id}"
+        if new_table_name == self.table_name:
+            print("This is already the table's name")
+            return
+
+        rename_command = f"ALTER TABLE {self.table_name} RENAME TO {new_table_name}"
+
+        self.cursor.execute(rename_command)
+        self.table_name = new_table_name
+        print(f'Table renamed to "{new_table_name}"')
+
+    def add_columns(self, new_columns, new_dtypes):
+        """
+        Adds new columns to table_name
+
+        :param new_dtypes: Data types of each new column in table_name
+        :type new_dtypes: list
+        :param new_columns: A list of new columns to be added to table_name
+        :type new_columns: list
+        :return: None
+        """
+        add_column_command = f"ALTER TABLE {self.table_name} ADD COLUMN "
+        if len(new_columns) > 1:
+            for i in range(len(new_columns) - 1):
+                add_column_command += f"{new_columns[i]} {new_dtypes[i]}, "
+            add_column_command += f"{new_columns[-1]} {new_dtypes[-1]})"
+        else:
+            add_column_command += f"{new_columns[0]} {new_dtypes[0]}"
+        self.cursor.execute(add_column_command)
+        print(f'New columns added to "{self.table_name}"')
+
+    def rename_columns(self, old_column_names, new_column_names):
+        """
+        Takes old_column_names as previous columns from table_name to rename
+
+        :param old_column_names: List of all the columns which are to be renamed
+        :type old_column_names: list
+        :param new_column_names: List containing all new column names
+        :type new_column_names: list
+        :return: None
+        """
+        rename_column_command = f"ALTER TABLE {self.table_name} RENAME COLUMN"
+        if len(new_column_names) > 1:
+            for i in range(len(new_column_names) - 1):
+                # Skips rename if new column name same as previous one
+                if old_column_names[i] == new_column_names[i]:
+                    continue
+                else:
+                    rename_column_command += f"{old_column_names[i]} TO {new_column_names[i]}, "
+            if old_column_names[-1] != new_column_names[-1]:
+                rename_column_command += f"{old_column_names[-1]} TO {new_column_names[-1]})"
+        else:
+            if old_column_names[0] != new_column_names[0]:
+                rename_column_command += f"{old_column_names[0]} TO {new_column_names[0]}"
+
+        if rename_column_command == f"ALTER TABLE {self.table_name} RENAME COLUMN":
+            # if all names were equivalent
+            return
+
+        self.cursor.execute(rename_column_command)
+        print('Columns successfully renamed')
+
+    def drop_columns(self, column_names):
+        """
+        Drops a list of columns from table_name
+
+        :param column_names: The list of columns being dropped
+        :type column_names: list
+        :return: None
+        """
+        drop_column_command = f'ALTER TABLE {self.table_name} DROP COLUMN'
+        if len(column_names) > 1:
+            for i in range(len(column_names) - 1):
+                drop_column_command += f"{column_names[i]}, "
+            drop_column_command += f"{column_names[-1]}"
+        else:
+            drop_column_command += f"{column_names[0]}"
+        self.cursor.execute(drop_column_command)
+        print(f'Columns successfully dropped from "{self.table_name}"')
+
+    def drop_rows(self, row_ids):
+        """
+        Deletes the list of rows whose IDs are included from table_name passed in
+
+        :param row_ids: IDs of rows to be dropped
+        :type row_ids: list
+        :return: None
+        """
+        drop_row_command = f"DELETE FROM {self.table_name} WHERE "
+        if len(row_ids) > 1:
+            for i in range(len(row_ids) - 1):
+                drop_row_command += f"id = {row_ids[i]}, "
+            drop_row_command += f"id = {row_ids[-1]}"
+        else:
+            drop_row_command += f"id = {row_ids[0]}"
         self.cursor.execute(drop_row_command)
-        print(f'Row with id = "{row_id}" successfully deleted')
+        print('Rows successfully deleted')
 
     def drop_table(self):
         """
