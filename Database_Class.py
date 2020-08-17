@@ -18,17 +18,25 @@ class DatabaseConnection:
 
     Methods
     -------
-    create_table(table_name, columns, dtypes, id_included=False):
+    create_table(columns, dtypes, id_included=False):
         Creates a new table in the connected database
-    insert_rows(table_name, columns, entries):
+    insert_rows(columns, entries):
         Inserts rows into specified SQL table
-    query(table_name, row_id=None, row_number=10):
-        Fetches first 10 rows of table by default, or can retrieve a specific ID in table
-    update_row(table_name, row_id, columns, row_entry):
+    query(columns, order='asc', row_id=None, row_number=None):
+        Fetches all rows of table by default, or can retrieve a specific ID in table
+    update_row(row_id, columns, row_entry):
         Updates specified row with new data from row_entry
-    drop_row(table_name, row_id):
-        Deletes the row mentioned from table passed in
-    drop_table(table_name):
+    rename_table(new_table_name):
+        Renames whole table
+    add_columns(new_columns, new_dtypes):
+        Adds new columns to table
+    rename_columns(old_column_names, new_column_names):
+        Renames specified columns in table
+    drop_columns(column_names):
+        Drops list of columns from table
+    drop_rows(row_ids):
+        Deletes listed rows from table
+    drop_table():
         Drops whole table
     close_connection():
         Closes connection to cursor and database
@@ -90,7 +98,7 @@ class DatabaseConnection:
         execute_values(self.cursor, insert_command, entries)
         print(str(len(entries)) + ' records successfully inserted into database')
 
-    def query(self, order='asc', row_id=None, row_number=None, columns=None):
+    def query(self, columns, order='asc', row_id=None, row_number=None):
         """
         Fetches all table rows by default, or can retrieve a specific ID in table, returning in DataFrame form
 
