@@ -22,9 +22,9 @@ class DatabaseConnection:
         Creates a new table in the connected database
     insert_rows(columns, entries):
         Inserts rows into specified SQL table
-    query(columns, order='asc', row_id=None, row_number=None):
-        Fetches all rows of table by default, or can retrieve a specific ID in table
-    update_row(row_id, columns, row_entry):
+    query(columns, order=None, row_id=None, row_number=None, conditions=None):
+        Fetches all rows of table in ascending order by default, or can retrieve a specific ID in table
+    update_rows(columns, row_entries, conditions=None):
         Updates specified row with new data from row_entry
     rename_table(new_table_name):
         Renames whole table
@@ -34,12 +34,28 @@ class DatabaseConnection:
         Renames specified columns in table
     drop_columns(column_names):
         Drops list of columns from table
-    drop_rows(row_ids):
+    delete_rows(conditions=None):
         Deletes listed rows from table
     drop_table():
         Drops whole table
     close_connection():
         Closes connection to cursor and database
+    equal(column_name, values):
+        Creates equivalent condition strings in a SQL format
+    greater_than(column_name, value):
+        Creates greater than condition strings in a SQL format
+    less_than(column_name, value):
+        Creates less than condition strings in a SQL format
+    between(column_name, start_value, end_value):
+        Creates between condition strings in a SQL format
+    not_equal(column_name, value):
+        Creates not equal to condition strings in a SQL format
+    not_null(column_name):
+        Creates condition strings in a SQL format to find all non-Null values of a column
+    asc(column_name):
+        Creates ascending order by strings in a SQL format
+    desc(column_name):
+        Creates descending order by strings in a SQL format
     """
 
     def __init__(self, table_name):
@@ -91,6 +107,9 @@ class DatabaseConnection:
         :type entries: list
         :return: None
         """
+        if len(entries) == 0:
+            print('No data to insert')
+            return
         # Formats columns list to return a bracketed list without quotations around each column name
         formatted_cols = "(" + "{0}".format(', '.join(map(str, columns))) + ")"
         insert_command = f"INSERT INTO {self.table_name} {formatted_cols} VALUES %s"
@@ -98,60 +117,77 @@ class DatabaseConnection:
         execute_values(self.cursor, insert_command, entries)
         print(str(len(entries)) + ' records successfully inserted into database')
 
-    def query(self, columns, order='asc', row_id=None, row_number=None):
+    def query(self, columns, conditions=None, order=None, row_number=None):
         """
         Fetches all table rows by default, or can retrieve a specific ID in table, returning in DataFrame form
 
+        :param conditions: Conditions to be included in WHERE statement for overall query
         :param columns: Columns present in table_name
         :type columns: list
-        :param frame: Whether or not to return the data obtained in a DataFrame
-        :type frame: bool
         :param order: Either ascending or descending order
         :type order: str
-        :param row_id: ID of row to be retrieved
-        :type row_id: int
         :param row_number: Number of rows to be retrieved
         :type row_number: int
         :return: DataFrame of fetch results
         :rtype: pd.DataFrame
         """
-        # If no row_id or conditions given, will return first 10 rows by default
-        if row_id is None:
-            if order.lower() == 'desc':
-                order_by = "ORDER BY DESC"
-            else:
-                order_by = "ORDER BY ASC"
+        # If no row_number or conditions given, will return all rows by default
+        if conditions is None:
             if row_number is not None:
-                self.cursor.execute(f"SELECT * FROM {self.table_name} LIMIT {row_number} {order_by}")
+                self.cursor.execute(f"SELECT * FROM {self.table_name} LIMIT {row_number} ")
             else:
-                self.cursor.execute(f"SELECT * FROM {self.table_name} {order_by}")
-            table = self.cursor.fetchall()
-            df = pd.DataFrame(table, columns=columns)
+                self.cursor.execute(f"SELECT * FROM {self.table_name} ")
+            result = self.cursor.fetchall()
+            df = pd.DataFrame(result, columns=columns)
             return df
         else:
-            self.cursor.execute(f"SELECT * FROM {self.table_name} WHERE id={row_id}")
-            row = self.cursor.fetchall()
-            df = pd.DataFrame(row, columns=columns)
-            return df
+            query_command = f" SELECT * FROM {self.table_name} WHERE "
+            # If given as a single condition str, this will be converted to a list
+            if type(conditions) == str:
+                conditions = [conditions]
+            if len(conditions) > 1:
+                for i in range(len(conditions) - 1):
+                    query_command += f"{conditions[i]} AND "
+                query_command += conditions[-1]
+            else:
+                query_command += conditions[0]
+        if order is not None:
+            query_command += f" ORDER BY {order}"
+        self.cursor.execute(query_command)
+        result = self.cursor.fetchall()
+        df = pd.DataFrame(result, columns=columns)
+        return df
 
-    def update_row(self, columns, row_entry, row_id):
+    def update_rows(self, columns, row_entries, conditions=None):
         """
         Updates specified row with new data from row_entry
 
+        :param conditions: Conditions to be included in WHERE statement for overall query
         :param columns: Columns present in table_name
         :type columns: list
-        :param row_entry: List of values to be inserted to update row_id
-        :type row_entry: list
-        :param row_id: ID of row to be updated
-        :type row_id: int
+        :param row_entries: List of values to be inserted to update row_id
+        :type row_entries: list
         :return: None
         """
-        update_command = f"UPDATE {self.table_name} SET "
-        for i in range(len(columns) - 1):
-            update_command += f"{columns[i]} = '{row_entry[0][i]}', "
-        update_command += f"{columns[-1]} = '{row_entry[0][-1]}' WHERE id={row_id}"
-        self.cursor.execute(update_command)
-        print(f'Row {row_id} of table "{self.table_name}" has been updated')
+        if conditions is None:
+            print('No conditions given, update cannot be completed')
+        elif len(row_entries) == 0:
+            print('No new rows given, update cannot be completed')
+        else:
+            update_command = f"UPDATE {self.table_name} SET "
+            for i in range(len(columns) - 1):
+                update_command += f"{columns[i]} = '{row_entries[0][i]}', "
+            update_command += f"{columns[-1]} = '{row_entries[0][-1]}' WHERE "
+            if type(conditions) == str:
+                conditions = [conditions]
+            if len(conditions) > 1:
+                for i in range(len(conditions) - 1):
+                    update_command += f"{conditions[i]} AND "
+                update_command += conditions[-1]
+            else:
+                update_command += conditions[0]
+            self.cursor.execute(update_command)
+            print(f'Rows of table "{self.table_name}" have been updated')
 
     def rename_table(self, new_table_name):
         """
@@ -182,6 +218,10 @@ class DatabaseConnection:
         :return: None
         """
         add_column_command = f"ALTER TABLE {self.table_name} ADD COLUMN "
+        if type(new_columns) == str:
+            new_columns = [new_columns]
+        if type(new_dtypes) == str:
+            new_dtypes = [new_dtypes]
         if len(new_columns) > 1:
             for i in range(len(new_columns) - 1):
                 add_column_command += f"{new_columns[i]} {new_dtypes[i]}, "
@@ -202,6 +242,10 @@ class DatabaseConnection:
         :return: None
         """
         rename_column_command = f"ALTER TABLE {self.table_name} RENAME COLUMN"
+        if type(old_column_names) == str:
+            old_column_names = [old_column_names]
+        if type(new_column_names) == str:
+            new_column_names = [new_column_names]
         if len(new_column_names) > 1:
             for i in range(len(new_column_names) - 1):
                 # Skips rename if new column name same as previous one
@@ -217,6 +261,7 @@ class DatabaseConnection:
 
         if rename_column_command == f"ALTER TABLE {self.table_name} RENAME COLUMN":
             # if all names were equivalent
+            print('All names the same, no changes made')
             return
 
         self.cursor.execute(rename_column_command)
@@ -231,6 +276,8 @@ class DatabaseConnection:
         :return: None
         """
         drop_column_command = f'ALTER TABLE {self.table_name} DROP COLUMN'
+        if type(column_names) == str:
+            column_names = [column_names]
         if len(column_names) > 1:
             for i in range(len(column_names) - 1):
                 drop_column_command += f"{column_names[i]}, "
@@ -240,22 +287,28 @@ class DatabaseConnection:
         self.cursor.execute(drop_column_command)
         print(f'Columns successfully dropped from "{self.table_name}"')
 
-    def drop_rows(self, row_ids):
+    def delete_rows(self, conditions=None):
         """
-        Deletes the list of rows whose IDs are included from table_name passed in
+        Deletes the list of rows from table_name which satisfy the given conditions
 
-        :param row_ids: IDs of rows to be dropped
-        :type row_ids: list
+        :param conditions: Conditions to be included in WHERE statement for overall query
         :return: None
         """
-        drop_row_command = f"DELETE FROM {self.table_name} WHERE "
-        if len(row_ids) > 1:
-            for i in range(len(row_ids) - 1):
-                drop_row_command += f"id = {row_ids[i]}, "
-            drop_row_command += f"id = {row_ids[-1]}"
+        delete_row_command = f"DELETE FROM {self.table_name} "
+        if conditions is None:
+            # Will delete all rows if no conditions given
+            self.cursor.execute(delete_row_command)
         else:
-            drop_row_command += f"id = {row_ids[0]}"
-        self.cursor.execute(drop_row_command)
+            delete_row_command += "WHERE "
+            if type(conditions) == str:
+                conditions = [conditions]
+            if len(conditions) > 1:
+                for i in range(len(conditions) - 1):
+                    delete_row_command += f"{conditions[i]} AND "
+                delete_row_command += conditions[-1]
+            else:
+                delete_row_command += conditions[0]
+        self.cursor.execute(delete_row_command)
         print('Rows successfully deleted')
 
     def drop_table(self):
@@ -277,3 +330,124 @@ class DatabaseConnection:
         self.cursor.close()
         self.connection.close()
         print('PostgreSQL connection is closed')
+
+    @staticmethod
+    def equal(column_name, values):
+        """
+        Function used to create equivalent condition strings in a SQL format.
+
+        :param column_name: Name of column inputted
+        :type column_name: str
+        :param values: Values to be equated to
+        :return: "column_name" = 'value'
+        :rtype: str
+        """
+        # if not a list of conditions to check
+        if (type(values) != list) and (type(values) != tuple):
+            condition = f" '{column_name}' = '{values}' "
+        else:
+            condition = '( '
+            for i in range(len(values)):
+                condition += f" '{column_name}' = '{values[i]}' "
+                if i != (len(values) - 1):
+                    condition += "OR "
+            condition += " )"
+        return condition
+
+    @staticmethod
+    def greater_than(column_name, value):
+        """
+        Function used to create greater than condition strings in a SQL format.
+
+        :param column_name: Name of column inputted
+        :type column_name: str
+        :param value: Value to be compared to
+        :type value: int
+        :return: "column_name" > 'value'
+        :rtype: str
+        """
+        condition = f" '{column_name}' > '{value}' "
+        return condition
+
+    @staticmethod
+    def less_than(column_name, value):
+        """
+        Function used to create less than condition strings in a SQL format.
+
+        :param column_name: Name of column inputted
+        :type column_name: str
+        :param value: Value to be compared to
+        :type value: int
+        :return: "column_name" less than 'value'
+        :rtype: str
+        """
+        condition = f" '{column_name}' < '{value}' "
+        return condition
+
+    @staticmethod
+    def between(column_name, start_value, end_value):
+        """
+        Function used to create between condition strings in a SQL format
+
+        :param column_name: Name of column inputted
+        :type column_name: str
+        :param start_value: Lower end of the region.
+        :type start_value: int
+        :param end_value: Higher end of the region.
+        :type end_value: int
+        :return: "column_name" > 'start_value' AND "column_name" less than 'end_value'
+        :rtype: str
+        """
+        condition = f" '{column_name}' > '{start_value}' AND '{column_name}' < '{end_value}' "
+        return condition
+
+    @staticmethod
+    def not_equal(column_name, value):
+        """
+        Function used to create non-equivalent condition strings in a SQL format.
+
+        :param column_name: Name of column inputted
+        :type column_name: str
+        :param value: Value to be compared to
+        :return: "column_name" != 'value'
+        :rtype: str
+        """
+        condition = f" '{column_name}' != '{value}' "
+        return condition
+
+    @staticmethod
+    def not_null(column_name):
+        """
+        Function used to create not null condition strings in a SQL format.
+
+        :param column_name: Name of column inputted
+        :type column_name: str
+        :return: "column_name" is not null
+        :rtype: str
+        """
+        condition = f" '{column_name}' is not null "
+        return condition
+
+    @staticmethod
+    def asc(column_name):
+        """
+        Function used to create ascending order by strings in a SQL format.
+
+        :param column_name: The column the user wants to order
+        :type column_name: str
+        :return: "column_name ASC"
+        :rtype: str
+        """
+        return f" '{column_name}' ASC"
+
+    @staticmethod
+    def desc(column_name):
+        """
+        Function used to create descending order by strings in a SQL format.
+
+        :param column_name: The column the user wants to order
+        :type column_name: str
+        :return: "column_name DESC"
+        :rtype: str
+        """
+        return f" '{column_name}' DESC"
