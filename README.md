@@ -3,10 +3,10 @@ python_for_postgres uses the psycopg2 library to establish a connection to Postg
 
 ## Installation
 
-# Clone
+### Clone
 Clone this repository to your machine using https://github.com/MMacdonald07/python_for_postgres.git.
 
-# Setup
+### Setup
 Use the package manager pip to install requirements so the program can be run:
 
 ```bash
@@ -42,9 +42,9 @@ Simply input your PSQL credentials in config.py to have your postgres username, 
   
   Please select one of the above options for what you would like to do:   
   ```
-# Testing
+### Testing
 The test_data.csv file contains sample data from [Kaggle](https://www.kaggle.com/stefanoleone992/fifa-20-complete-player-dataset?select=players_20.csv) that can be used in conjunction with python_for_postgres.
  
- ## Contributing
+## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 Please make sure to update tests as appropriate.
