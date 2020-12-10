@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 from psycopg2.extras import execute_values
-from config import user, password, dbname
+from myconfig import user, password, dbname
 
 
 class DatabaseConnection:
@@ -98,9 +98,11 @@ class DatabaseConnection:
         """
         # Scans through DataFrame and determines the equivalent SQL data type of each column
         try:
-            dtypes = [self.sql_type_conversion[(type(entry))] for entry in data.dropna().iloc[0]]
+            dtypes = [self.sql_type_conversion[(
+                type(entry))] for entry in data.dropna().iloc[0]]
         except IndexError:
-            dtypes = [self.sql_type_conversion[(type(entry))] for entry in data.iloc[0]]
+            dtypes = [self.sql_type_conversion[(
+                type(entry))] for entry in data.iloc[0]]
         if not id_included:
             # Will produce signature ID column if none included
             create_table_command = f"CREATE TABLE {self.table_name} (id bigserial PRIMARY KEY, "
@@ -115,7 +117,8 @@ class DatabaseConnection:
         try:
             self.cursor.execute(create_table_command)
         except:
-            print(f'Table {self.table_name} could not be created - it may already exist')
+            print(
+                f'Table {self.table_name} could not be created - it may already exist')
             return
         print(f'Table "{self.table_name}" successfully created')
 
@@ -356,7 +359,8 @@ class DatabaseConnection:
                               f" WHERE table_name = '{self.table_name}' ORDER BY ordinal_position ASC"
         self.cursor.execute(get_columns_command)
         column_positions = self.cursor.fetchall()
-        columns = [column_positions[i][0] for i in range(len(column_positions))]
+        columns = [column_positions[i][0]
+                   for i in range(len(column_positions))]
         return columns
 
     def save_table(self, path):
