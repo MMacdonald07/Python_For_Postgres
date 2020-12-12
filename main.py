@@ -157,7 +157,7 @@ def main():
                 print(
                     f'Sorry, {alter_choice} was not one of the options, halting operation now...')
         elif user_choice == 'c':
-            print('To create a table, a CSV file is needed including columns and rows so the program can'
+            print('To create a table, a CSV file is needed including columns and rows so the program can '
                   'gather the data type of each column')
             filepath = input('Please type the whole path of this data:    ')
             id_bool = input(
