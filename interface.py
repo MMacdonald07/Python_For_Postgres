@@ -152,14 +152,21 @@ def insert_data(table, filepath):
     database_connection.close_connection()
 
 
-def get_file(table, create):
-    root.filename = filedialog.askopenfilename(
-        initialdir=os.getcwd(), filetypes=[("csv files", "*.csv")])
-    file_label = Label(root, text=f'Selected file: \n{root.filename}').grid(
-        row=2, columnspan=2)
+def save_data(table, filepath):
+    database_connection = DatabaseConnection(table)
+    database_connection.save_table(filepath)
+    database_connection.close_connection()
 
-    if create == True:
+
+def get_file(table, type):
+
+    if type == 'create_new':
         id_included = BooleanVar()
+
+        root.filename = filedialog.askopenfilename(
+            initialdir=os.getcwd(), filetypes=[("csv files", "*.csv")])
+        file_label = Label(root, text=f'Selected file: \n{root.filename}').grid(
+            row=2, columnspan=2)
 
         checkbox = Checkbutton(root, text='Tick this if your data includes an index', font=myFont,
                                variable=id_included, onvalue=True, offvalue=False)
@@ -167,9 +174,22 @@ def get_file(table, create):
         checkbox.deselect()
         submit_btn = Button(root, text='Submit', font=myFont, command=lambda: create_table(
             table, root.filename, id_included.get())).grid(row=4, columnspan=2, pady=10)
-    else:
+    elif type == 'insert_rows':
+        root.filename = filedialog.askopenfilename(
+            initialdir=os.getcwd(), filetypes=[("csv files", "*.csv")])
+        file_label = Label(root, text=f'Selected file: \n{root.filename}').grid(
+            row=2, columnspan=2)
+
         submit_btn = Button(root, text='Submit', font=myFont, command=lambda: insert_data(
             table, root.filename)).grid(row=3, columnspan=2, pady=10)
+    elif type == 'save':
+        root.filename = filedialog.asksaveasfile(
+            mode='w', defaultextension='.csv', filetypes=[("csv files", "*.csv")])
+        file_label = Label(root, text=f'Selected file: \n{root.filename.name}').grid(
+            row=2, columnspan=2)
+
+        submit_btn = Button(root, text='Submit', font=myFont, command=lambda: save_data(
+            table, root.filename.name)).grid(row=3, columnspan=2, pady=10)
 
 
 def create(table):
@@ -180,7 +200,7 @@ def create(table):
                      font=myFont).grid(row=0, columnspan=2)
 
     select_btn = Button(root, text='Select', font=myFont, command=lambda: get_file(
-        table, True)).grid(row=1, columnspan=2, pady=10)
+        table, 'create_new')).grid(row=1, columnspan=2, pady=10)
 
 
 def insert(table):
@@ -191,7 +211,18 @@ def insert(table):
                      font=myFont).grid(row=0, columnspan=2)
 
     select_btn = Button(root, text='Select', font=myFont, command=lambda: get_file(
-        table, False)).grid(row=1, columnspan=2, pady=10)
+        table, 'insert_rows')).grid(row=1, columnspan=2, pady=10)
+
+
+def save(table):
+    for ele in root.winfo_children():
+        ele.destroy()
+
+    main_lbl = Label(root, text='Save your table as a CSV file:',
+                     font=myFont).grid(row=0, columnspan=2)
+
+    select_btn = Button(root, text='Select', font=myFont, command=lambda: get_file(
+        table, 'save')).grid(row=1, columnspan=2, pady=10)
 
 
 def delete(table):
@@ -204,12 +235,6 @@ def query(table):
     for ele in root.winfo_children():
         ele.destroy()
     lbl = Label(root, text='You have chosen to query').grid(row=0, column=0)
-
-
-def save(table):
-    for ele in root.winfo_children():
-        ele.destroy()
-    lbl = Label(root, text='You have chosen to save').grid(row=0, column=0)
 
 
 def update(table):
