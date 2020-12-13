@@ -1,7 +1,9 @@
+import os
 import time
 import pandas as pd
 import datetime as dt
 from tkinter import *
+from tkinter import filedialog
 import tkinter.font as font
 
 from Database_Class import DatabaseConnection
@@ -92,13 +94,13 @@ def rename_table_selection(table, alter_frame):
         widget.destroy()
 
     rename_table_label = Label(
-        alter_frame, text='What would you like to rename the table to?', font=myFont).grid(row=4, columnspan=2)
+        alter_frame, text='What would you like to rename the table to?', font=myFont).grid(row=4, column=0)
     rename_table_entry = Entry(
         alter_frame, width=15, font=myFont)
-    rename_table_entry.grid(row=5, columnspan=2)
+    rename_table_entry.grid(row=5, column=0)
 
     submit_btn = Button(alter_frame, text='Submit', font=myFont, command=lambda: rename_table(
-        table, rename_table_entry.get())).grid(row=6, columnspan=2, pady=10)
+        table, rename_table_entry.get())).grid(row=6, column=0, pady=10)
 
 
 def alter(table):
@@ -109,6 +111,7 @@ def alter(table):
 
     alter_frame = Frame(root)
     alter_frame.grid(row=4, columnspan=2, sticky="nesw")
+    alter_frame.columnconfigure(0, weight=1)
 
     main_lbl = Label(root, text='How would you like to alter the table?',
                      font=myFont).grid(row=0, columnspan=2)
@@ -116,23 +119,53 @@ def alter(table):
     option_1_btn = Button(root, text='Add', font=myFont, command=lambda: add_columns_selection(
         table, alter_frame)).grid(row=1, column=0, pady=5)
     option_1_lbl = Label(root, text='Add new columns',
-                         font=myFont).grid(row=1, column=1)
+                         font=myFont).grid(row=1, column=1, padx=10)
 
     option_2_btn = Button(root, text='Rename', font=myFont, command=lambda: rename_columns_selection(
         table, alter_frame)).grid(row=2, column=0, pady=5)
     option_2_lbl = Label(root, text='Rename columns',
-                         font=myFont).grid(row=2, column=1)
+                         font=myFont).grid(row=2, column=1, padx=10)
 
     option_3_btn = Button(root, text='Rename', font=myFont, command=lambda: rename_table_selection(
         table, alter_frame)).grid(row=3, column=0, pady=5)
     option_3_lbl = Label(root, text='Rename the table',
-                         font=myFont).grid(row=3, column=1)
+                         font=myFont).grid(row=3, column=1, padx=10)
+
+
+def create_table(table, filepath, id_included):
+    data = pd.read_csv(filepath)
+    data = data.copy()
+    columns = [column for column in data.columns]
+
+    database_connection = DatabaseConnection(table)
+    database_connection.create_table(columns, data, id_included)
+    database_connection.close_connection()
+
+
+def get_file(table):
+    id_included = BooleanVar()
+
+    root.filename = filedialog.askopenfilename(
+        initialdir=os.getcwd(), filetypes=[("csv files", "*.csv")])
+    file_label = Label(root, text=f'Selected file: \n{root.filename}').grid(
+        row=2, columnspan=2)
+    checkbox = Checkbutton(root, text='Tick this if your data includes an index', font=myFont,
+                           variable=id_included, onvalue=True, offvalue=False)
+    checkbox.grid(row=3, columnspan=2)
+    checkbox.deselect()
+    submit_btn = Button(root, text='Submit', font=myFont, command=lambda: create_table(
+        table, root.filename, id_included.get())).grid(row=4, columnspan=2, pady=10)
 
 
 def create(table):
     for ele in root.winfo_children():
         ele.destroy()
-    lbl = Label(root, text='You have chosen to create').grid(row=0, column=0)
+
+    main_lbl = Label(root, text='Please select a .csv file of the data \n for the program to create the table:',
+                     font=myFont).grid(row=0, columnspan=2)
+
+    select_btn = Button(root, text='Select', font=myFont, command=lambda: get_file(
+        table)).grid(row=1, columnspan=2, pady=10)
 
 
 def delete(table):
