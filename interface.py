@@ -142,19 +142,34 @@ def create_table(table, filepath, id_included):
     database_connection.close_connection()
 
 
-def get_file(table):
-    id_included = BooleanVar()
+def insert_data(table, filepath):
+    data = pd.read_csv(filepath)
+    data = data.copy()
+    columns = [column for column in data.columns]
 
+    database_connection = DatabaseConnection(table)
+    database_connection.insert_rows(columns, data)
+    database_connection.close_connection()
+
+
+def get_file(table, create):
     root.filename = filedialog.askopenfilename(
         initialdir=os.getcwd(), filetypes=[("csv files", "*.csv")])
     file_label = Label(root, text=f'Selected file: \n{root.filename}').grid(
         row=2, columnspan=2)
-    checkbox = Checkbutton(root, text='Tick this if your data includes an index', font=myFont,
-                           variable=id_included, onvalue=True, offvalue=False)
-    checkbox.grid(row=3, columnspan=2)
-    checkbox.deselect()
-    submit_btn = Button(root, text='Submit', font=myFont, command=lambda: create_table(
-        table, root.filename, id_included.get())).grid(row=4, columnspan=2, pady=10)
+
+    if create == True:
+        id_included = BooleanVar()
+
+        checkbox = Checkbutton(root, text='Tick this if your data includes an index', font=myFont,
+                               variable=id_included, onvalue=True, offvalue=False)
+        checkbox.grid(row=3, columnspan=2)
+        checkbox.deselect()
+        submit_btn = Button(root, text='Submit', font=myFont, command=lambda: create_table(
+            table, root.filename, id_included.get())).grid(row=4, columnspan=2, pady=10)
+    else:
+        submit_btn = Button(root, text='Submit', font=myFont, command=lambda: insert_data(
+            table, root.filename)).grid(row=3, columnspan=2, pady=10)
 
 
 def create(table):
@@ -165,19 +180,24 @@ def create(table):
                      font=myFont).grid(row=0, columnspan=2)
 
     select_btn = Button(root, text='Select', font=myFont, command=lambda: get_file(
-        table)).grid(row=1, columnspan=2, pady=10)
+        table, True)).grid(row=1, columnspan=2, pady=10)
+
+
+def insert(table):
+    for ele in root.winfo_children():
+        ele.destroy()
+
+    main_lbl = Label(root, text='Please select a .csv file of the data to insert:',
+                     font=myFont).grid(row=0, columnspan=2)
+
+    select_btn = Button(root, text='Select', font=myFont, command=lambda: get_file(
+        table, False)).grid(row=1, columnspan=2, pady=10)
 
 
 def delete(table):
     for ele in root.winfo_children():
         ele.destroy()
     lbl = Label(root, text='You have chosen to delete').grid(row=0, column=0)
-
-
-def insert(table):
-    for ele in root.winfo_children():
-        ele.destroy()
-    lbl = Label(root, text='You have chosen to insert').grid(row=0, column=0)
 
 
 def query(table):
