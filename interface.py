@@ -188,7 +188,7 @@ def get_file(table, type):
         file_label = Label(root, text=f'Selected file: \n{root.filename.name}').grid(
             row=2, columnspan=2)
 
-        submit_btn = Button(root, text='Submit', font=myFont, command=lambda: save_data(
+        submit_btn = Button(root, text='Save to File', font=myFont, command=lambda: save_data(
             table, root.filename.name)).grid(row=3, columnspan=2, pady=10)
 
 
@@ -225,10 +225,106 @@ def save(table):
         table, 'save')).grid(row=1, columnspan=2, pady=10)
 
 
+def drop_table(table):
+    database_connection = DatabaseConnection(table)
+    database_connection.drop_table()
+    database_connection.close_connection()
+
+
+def exit_program(frame):
+    closing_lbl = Label(frame, text='Click to close program',
+                        font=myFont).grid(row=6, columnspan=2)
+    close_btn = Button(frame, text='Close', font=myFont,
+                       command=root.quit).grid(row=7, columnspan=2, pady=10)
+
+
+def drop_table_selection(table, delete_frame):
+    for widget in delete_frame.winfo_children():
+        widget.destroy()
+
+    main_lbl = Label(
+        delete_frame, text='Are you sure you would like to drop the table?', font=myFont).grid(row=4, columnspan=2)
+
+    yes_btn = Button(delete_frame, text='Yes', font=myFont, command=lambda: drop_table(
+        table)).grid(row=5, column=0, pady=10)
+    no_btn = Button(delete_frame, text='No', font=myFont, command=lambda: exit_program(
+        delete_frame)).grid(row=5, column=1, pady=10)
+
+
+def delete_columns(table, drop_columns_str):
+    drop_columns = [
+        item for item in drop_columns_str.replace(',', ' ').split()]
+
+    database_connection = DatabaseConnection(table)
+    database_connection.drop_columns(drop_columns)
+    database_connection.close_connection()
+
+
+def delete_columns_selection(table, delete_frame):
+    for widget in delete_frame.winfo_children():
+        widget.destroy()
+
+    drop_columns_label = Label(
+        delete_frame, text='Please present entries as comma separated list', font=myFont).grid(row=4, columnspan=2)
+
+    drop_column_names_label = Label(
+        delete_frame, text='Columns To Be Dropped:', font=myFont).grid(row=5, column=0)
+    drop_column_names_entry = Entry(
+        delete_frame, width=15, font=myFont)
+    drop_column_names_entry.grid(row=5, column=1)
+
+    submit_btn = Button(delete_frame, text='Submit', font=myFont, command=lambda: delete_columns(
+        table, drop_column_names_entry.get())).grid(row=6, columnspan=2, pady=10)
+
+
+def drop_rows(table, conditions):
+    database_connection = DatabaseConnection(table)
+
+    database_connection.close_connection()
+
+
+def drop_rows_selection(table, delete_frame):
+    for widget in delete_frame.winfo_children():
+        widget.destroy()
+
+    drop_rows_label = Label(
+        delete_frame, text='Would you like to include more conditions?', font=myFont).grid(row=4, columnspan=2)
+    drop_rows_entry = Entry(
+        delete_frame, width=15, font=myFont)
+    drop_rows_entry.grid(row=5, columnspan=2)
+
+    submit_btn = Button(delete_frame, text='Submit', font=myFont, command=lambda: drop_rows(
+        table, drop_rows_entry.get())).grid(row=6, columnspan=2, pady=10)
+
+
 def delete(table):
     for ele in root.winfo_children():
         ele.destroy()
-    lbl = Label(root, text='You have chosen to delete').grid(row=0, column=0)
+
+    root.rowconfigure(0, weight=0)
+
+    delete_frame = Frame(root)
+    delete_frame.grid(row=4, columnspan=2, sticky="nesw")
+    delete_frame.columnconfigure(0, weight=1)
+    delete_frame.columnconfigure(1, weight=1)
+
+    main_lbl = Label(root, text='What would you like to delete?',
+                     font=myFont).grid(row=0, columnspan=2)
+
+    option_1_btn = Button(root, text='Columns', font=myFont, command=lambda: delete_columns_selection(
+        table, delete_frame)).grid(row=1, column=0, pady=5)
+    option_1_lbl = Label(root, text='Delete columns',
+                         font=myFont).grid(row=1, column=1, padx=10)
+
+    option_2_btn = Button(root, text='Table', font=myFont, command=lambda: drop_table_selection(
+        table, delete_frame)).grid(row=2, column=0, pady=5)
+    option_2_lbl = Label(root, text='Drop whole table',
+                         font=myFont).grid(row=2, column=1, padx=10)
+
+    option_3_btn = Button(root, text='Rows', font=myFont, command=lambda: drop_rows_selection(
+        table, delete_frame)).grid(row=3, column=0, pady=5)
+    option_3_lbl = Label(root, text='Delete rows',
+                         font=myFont).grid(row=3, column=1, padx=10)
 
 
 def query(table):
