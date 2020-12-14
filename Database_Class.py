@@ -303,15 +303,15 @@ class DatabaseConnection:
         :type column_names: list
         :return: None
         """
-        drop_column_command = f'ALTER TABLE {self.table_name} DROP COLUMN '
+        drop_column_command = f'ALTER TABLE {self.table_name} '
         if type(column_names) == str:
             column_names = [column_names]
         if len(column_names) > 1:
             for i in range(len(column_names) - 1):
-                drop_column_command += f"{column_names[i]}, "
-            drop_column_command += f"{column_names[-1]}"
+                drop_column_command += f"DROP COLUMN {column_names[i]}, "
+            drop_column_command += f"DROP COLUMN {column_names[-1]}"
         else:
-            drop_column_command += f"{column_names[0]}"
+            drop_column_command += f"DROP COLUMN{column_names[0]}"
         self.cursor.execute(drop_column_command)
         print(f'Columns successfully dropped from "{self.table_name}"')
 
