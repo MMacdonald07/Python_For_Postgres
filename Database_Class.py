@@ -168,7 +168,7 @@ class DatabaseConnection:
             query_command = f" SELECT * FROM {self.table_name} WHERE "
             if len(conditions) > 1:
                 for i in range(len(conditions) - 1):
-                    query_command += f"{conditions[i]} AND "
+                    query_command += f"{conditions[i]} OR "
                 query_command += conditions[-1]
             else:
                 query_command += conditions[0]
@@ -211,7 +211,7 @@ class DatabaseConnection:
             update_command += f"{columns[-1]} = '{row_entries[0][-1]}' WHERE "
             if len(conditions) > 1:
                 for i in range(len(conditions) - 1):
-                    update_command += f"{conditions[i]} AND "
+                    update_command += f"{conditions[i]} OR "
                 update_command += conditions[-1]
             else:
                 update_command += conditions[0]
@@ -324,14 +324,14 @@ class DatabaseConnection:
         :return: None
         """
         delete_row_command = f"DELETE FROM {self.table_name} "
-        if conditions is None:
+        if conditions is None or len(conditions) == 0:
             # Will delete all rows if no conditions given
             self.cursor.execute(delete_row_command)
         else:
             delete_row_command += "WHERE "
             if len(conditions) > 1:
                 for i in range(len(conditions) - 1):
-                    delete_row_command += f"{conditions[i]} AND "
+                    delete_row_command += f"{conditions[i]} OR "
                 delete_row_command += conditions[-1]
             else:
                 delete_row_command += conditions[0]
