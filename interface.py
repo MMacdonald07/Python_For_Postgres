@@ -1,5 +1,4 @@
 import os
-import time
 import pandas as pd
 import datetime as dt
 from tkinter import *
@@ -134,13 +133,17 @@ def alter(table):
                          font=myFont).grid(row=3, column=1, padx=10)
 
 
-def create_table(table, filepath, id_included):
+def create_table(table, filepath, id_included, create_and_insert):
     data = pd.read_csv(filepath)
     data = data.copy()
     columns = [column for column in data.columns]
 
     database_connection = DatabaseConnection(table)
     database_connection.create_table(columns, data, id_included)
+
+    if (create_and_insert):
+        database_connection.insert_rows(columns, data)
+
     database_connection.close_connection()
 
 
@@ -163,18 +166,25 @@ def save_data(table, filepath):
 def get_file(table, type):
     if type == 'create_new':
         id_included = BooleanVar()
+        create_and_insert = BooleanVar()
 
         root.filename = filedialog.askopenfilename(
             initialdir=os.getcwd(), filetypes=[("csv files", "*.csv")])
         file_label = Label(root, text=f'Selected file: \n{root.filename}').grid(
             row=2, columnspan=2)
 
-        checkbox = Checkbutton(root, text='Tick this if your data includes an index', font=myFont,
-                               variable=id_included, onvalue=True, offvalue=False)
-        checkbox.grid(row=3, columnspan=2)
-        checkbox.deselect()
+        checkbox_index = Checkbutton(root, text='Tick this if your data includes an index', font=myFont,
+                                     variable=id_included, onvalue=True, offvalue=False)
+        checkbox_index.grid(row=3, columnspan=2)
+        checkbox_index.deselect()
+
+        checkbox_insert = Checkbutton(root, text='Tick this if you would also like to insert data', font=myFont,
+                                      variable=create_and_insert, onvalue=True, offvalue=False)
+        checkbox_insert.grid(row=4, columnspan=2)
+        checkbox_insert.deselect()
+
         submit_btn = Button(root, text='Submit', font=myFont, command=lambda: create_table(
-            table, root.filename, id_included.get())).grid(row=4, columnspan=2, pady=10)
+            table, root.filename, id_included.get(), create_and_insert.get())).grid(row=5, columnspan=2, pady=10)
     elif type == 'insert_rows':
         root.filename = filedialog.askopenfilename(
             initialdir=os.getcwd(), filetypes=[("csv files", "*.csv")])
@@ -520,8 +530,6 @@ def main_program(table):
 
     for i in range(2):
         frmMain.columnconfigure(i, weight=1)
-
-    # database_connection = DatabaseConnection(table)
 
     main_lbl = Label(root, text='What would you like to do?', font=myFont).grid(
         row=0, column=0)
