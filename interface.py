@@ -163,7 +163,243 @@ def save_data(table, filepath):
     database_connection.close_connection()
 
 
-def get_file(table, type):
+def drop_rows(table, conditions):
+    database_connection = DatabaseConnection(table)
+    database_connection.delete_rows(conditions)
+    database_connection.close_connection()
+
+
+def update_rows(table, conditions, filepath):
+    print(filepath)
+    new_data = pd.read_csv(filepath)
+    new_data = new_data.copy()
+    columns = [column for column in new_data.columns]
+
+    database_connection = DatabaseConnection(table)
+    database_connection.update_rows(columns, new_data, conditions)
+    database_connection.close_connection()
+
+
+def condition_creator(table, frame, type, filepath=None):
+    def equals(table, frame, column_name, values_str, type, filepath=None):
+        global conditions
+        values = [item for item in values_str.replace(',', ' ').split()]
+        database_connection = DatabaseConnection(table)
+        conditions.append(database_connection.equal(column_name, values))
+        database_connection.close_connection()
+
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        main_label = Label(
+            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
+        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
+            table, frame, type, filepath)).grid(row=6, column=0, pady=10)
+        if type == 'drop_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
+                table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'update_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
+                table, conditions, filepath)).grid(row=6, column=1, pady=10)
+
+    def greater_than(table, frame, column_name, value, type, filepath=None):
+        global conditions
+        database_connection = DatabaseConnection(table)
+        conditions.append(database_connection.greater_than(column_name, value))
+        database_connection.close_connection()
+
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        main_label = Label(
+            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
+        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
+            table, frame, type, filepath)).grid(row=6, column=0, pady=10)
+        if type == 'drop_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
+                table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'update_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
+                table, conditions, filepath)).grid(row=6, column=1, pady=10)
+
+    def less_than(table, frame, column_name, value, type, filepath=None):
+        global conditions
+        database_connection = DatabaseConnection(table)
+        conditions.append(database_connection.less_than(column_name, value))
+        database_connection.close_connection()
+
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        main_label = Label(
+            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
+        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
+            table, frame, type, filepath)).grid(row=6, column=0, pady=10)
+        if type == 'drop_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
+                table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'update_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
+                table, conditions, filepath)).grid(row=6, column=1, pady=10)
+
+    def between(table, frame, column_name, start_value, end_value, type, filepath=None):
+        global conditions
+        database_connection = DatabaseConnection(table)
+        conditions.append(database_connection.between(
+            column_name, start_value, end_value))
+        database_connection.close_connection()
+
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        main_label = Label(
+            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
+        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
+            table, frame, type, filepath)).grid(row=6, column=0, pady=10)
+        if type == 'drop_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
+                table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'update_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
+                table, conditions, filepath)).grid(row=6, column=1, pady=10)
+
+    def not_equal(table, frame, column_name, value, type, filepath=None):
+        global conditions
+        database_connection = DatabaseConnection(table)
+        conditions.append(database_connection.not_equal(column_name, value))
+        database_connection.close_connection()
+
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        main_label = Label(
+            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
+        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
+            table, frame, type, filepath)).grid(row=6, column=0, pady=10)
+        if type == 'drop_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
+                table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'update_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
+                table, conditions, filepath)).grid(row=6, column=1, pady=10)
+
+    def not_null(table, frame, column_name, type, filepath=None):
+        global conditions
+        database_connection = DatabaseConnection(table)
+        conditions.append(database_connection.not_null(column_name))
+        database_connection.close_connection()
+
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        main_label = Label(
+            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
+        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
+            table, frame, type, filepath)).grid(row=6, column=0, pady=10)
+        if type == 'drop_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
+                table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'update_rows':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
+                table, conditions, filepath)).grid(row=6, column=1, pady=10)
+
+    def construct_condition(table, frame, column_name, comparator, type, filepath=None):
+        submit_btn.destroy()
+
+        if comparator == 'Equals':
+            equal_value_label = Label(
+                frame, text='What values would you like to compare?', font=myFont).grid(row=9, columnspan=2)
+            equal_value_entry = Entry(frame, width=15, font=myFont)
+            equal_value_entry.grid(row=10, columnspan=2)
+            submit_condition_btn = Button(frame, text='Submit', font=myFont,
+                                          command=lambda: equals(table, frame, column_name, equal_value_entry.get(), type, filepath)).grid(row=11, columnspan=2, pady=10)
+
+        elif comparator == 'Greater Than':
+            greater_than_value_label = Label(
+                frame, text='What value would you like to compare?', font=myFont).grid(row=9, columnspan=2)
+            greater_than_value_entry = Entry(frame, width=15, font=myFont)
+            greater_than_value_entry.grid(row=10, columnspan=2)
+            submit_condition_btn = Button(frame, text='Submit', font=myFont,
+                                          command=lambda: greater_than(table, frame, column_name, greater_than_value_entry.get(), type, filepath)).grid(row=11, columnspan=2, pady=10)
+
+        elif comparator == 'Less Than':
+            less_than_value_label = Label(
+                frame, text='What value would you like to compare?', font=myFont).grid(row=9, columnspan=2)
+            less_than_value_entry = Entry(frame, width=15, font=myFont)
+            less_than_value_entry.grid(row=10, columnspan=2)
+            submit_condition_btn = Button(frame, text='Submit', font=myFont,
+                                          command=lambda: less_than(table, frame, column_name, less_than_value_entry.get(), type, filepath)).grid(row=11, columnspan=2, pady=10)
+
+        elif comparator == 'Between':
+            between_starting_value_label = Label(
+                frame, text='What starting value would you like to use?', font=myFont).grid(row=9, columnspan=2)
+            between_starting_value_entry = Entry(frame, width=15, font=myFont)
+            between_starting_value_entry.grid(row=10, columnspan=2)
+            between_ending_value_label = Label(
+                frame, text='What ending value would you like to use?', font=myFont).grid(row=11, columnspan=2)
+            between_ending_value_entry = Entry(frame, width=15, font=myFont)
+            between_ending_value_entry.grid(row=12, columnspan=2)
+            submit_condition_btn = Button(frame, text='Submit', font=myFont,
+                                          command=lambda: between(table, frame, column_name, between_starting_value_entry.get(), between_ending_value_entry.get(), type, filepath)).grid(row=13, columnspan=2, pady=10)
+
+        elif comparator == 'Not Equal':
+            not_equal_value_label = Label(
+                frame, text='What value would you like to compare?', font=myFont).grid(row=9, columnspan=2)
+            not_equal_value_entry = Entry(frame, width=15, font=myFont)
+            not_equal_value_entry.grid(row=10, columnspan=2)
+            submit_condition_btn = Button(frame, text='Submit', font=myFont,
+                                          command=lambda: not_equal(table, frame, column_name, not_equal_value_entry.get(), type, filepath)).grid(row=11, columnspan=2, pady=10)
+
+        elif comparator == 'Not Null':
+            not_null(table, frame, column_name, type, filepath)
+
+    if type == 'drop_rows':
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        column_name_label = Label(
+            frame, text='What column would you like to compare?', font=myFont).grid(row=4, columnspan=2)
+        column_name_entry = Entry(frame, width=15, font=myFont)
+        column_name_entry.grid(row=5, columnspan=2)
+
+        comparator = StringVar()
+        comparator.set('Equals')
+
+        dropdown_label = Label(
+            frame, text='What comparator would you like to use?', font=myFont).grid(row=6, columnspan=2)
+        comparator_dropdown = OptionMenu(
+            frame, comparator, 'Equals', 'Greater Than', 'Less Than', 'Between', 'Not Equal', 'Not Null')
+        comparator_dropdown.grid(row=7, columnspan=2)
+
+        submit_btn = Button(frame, text='Submit', font=myFont,
+                            command=lambda: construct_condition(table, frame, column_name_entry.get(), comparator.get(), type))
+        submit_btn.grid(row=8, columnspan=2, pady=10)
+    elif type == 'update_rows':
+        for widget in frame.winfo_children():
+            widget.destroy()
+
+        condition_label = Label(
+            frame, text='To update you must input conditions:', font=myFont).grid(row=4, columnspan=2)
+        column_name_label = Label(
+            frame, text='What column would you like to compare?', font=myFont).grid(row=5, columnspan=2)
+        column_name_entry = Entry(frame, width=15, font=myFont)
+        column_name_entry.grid(row=6, columnspan=2)
+
+        comparator = StringVar()
+        comparator.set('Equals')
+
+        dropdown_label = Label(
+            frame, text='What comparator would you like to use?', font=myFont).grid(row=7, columnspan=2)
+        comparator_dropdown = OptionMenu(
+            frame, comparator, 'Equals', 'Greater Than', 'Less Than', 'Between', 'Not Equal', 'Not Null')
+        comparator_dropdown.grid(row=8, columnspan=2)
+
+        submit_btn = Button(frame, text='Submit', font=myFont,
+                            command=lambda: construct_condition(table, frame, column_name_entry.get(), comparator.get(), type, filepath))
+        submit_btn.grid(row=9, columnspan=2, pady=10)
+
+
+def get_file(table, type, frame=None):
     if type == 'create_new':
         id_included = BooleanVar()
         create_and_insert = BooleanVar()
@@ -193,13 +429,21 @@ def get_file(table, type):
 
         submit_btn = Button(root, text='Submit', font=myFont, command=lambda: insert_data(
             table, root.filename)).grid(row=3, columnspan=2, pady=10)
+    elif type == 'update_rows':
+        root.filename = filedialog.askopenfilename(
+            initialdir=os.getcwd(), filetypes=[("csv files", "*.csv")])
+        file_label = Label(frame, text=f'Selected file: \n{root.filename}').grid(
+            row=2, columnspan=2)
+
+        submit_btn = Button(frame, text='Submit', font=myFont, command=lambda: condition_creator(
+            table, frame, 'update_rows', root.filename)).grid(row=3, columnspan=2, pady=10)
     elif type == 'save':
         root.filename = filedialog.asksaveasfile(
             mode='w', defaultextension='.csv', filetypes=[("csv files", "*.csv")])
         file_label = Label(root, text=f'Selected file: \n{root.filename.name}').grid(
             row=2, columnspan=2)
 
-        submit_btn = Button(root, text='Save to File', font=myFont, command=lambda: save_data(
+        submit_btn = Button(root, text='Write to File', font=myFont, command=lambda: save_data(
             table, root.filename.name)).grid(row=3, columnspan=2, pady=10)
 
 
@@ -288,183 +532,6 @@ def delete_columns_selection(table, delete_frame):
         table, drop_column_names_entry.get())).grid(row=6, columnspan=2, pady=10)
 
 
-def drop_rows(table, conditions):
-    database_connection = DatabaseConnection(table)
-    database_connection.delete_rows(conditions)
-    database_connection.close_connection()
-
-
-def condition_creator(table, frame):
-    def equals(table, frame, column_name, values_str):
-        global conditions
-        values = [item for item in values_str.replace(',', ' ').split()]
-        database_connection = DatabaseConnection(table)
-        conditions.append(database_connection.equal(column_name, values))
-        database_connection.close_connection()
-
-        for widget in frame.winfo_children():
-            widget.destroy()
-
-        drop_rows_label = Label(
-            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
-        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
-            table, frame)).grid(row=6, column=0, pady=10)
-        no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
-            table, conditions)).grid(row=6, column=1, pady=10)
-
-    def greater_than(table, frame, column_name, value):
-        global conditions
-        database_connection = DatabaseConnection(table)
-        conditions.append(database_connection.greater_than(column_name, value))
-        database_connection.close_connection()
-
-        for widget in frame.winfo_children():
-            widget.destroy()
-
-        drop_rows_label = Label(
-            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
-        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
-            table, frame)).grid(row=6, column=0, pady=10)
-        no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
-            table, conditions)).grid(row=6, column=1, pady=10)
-
-    def less_than(table, frame, column_name, value):
-        global conditions
-        database_connection = DatabaseConnection(table)
-        conditions.append(database_connection.less_than(column_name, value))
-        database_connection.close_connection()
-
-        for widget in frame.winfo_children():
-            widget.destroy()
-
-        drop_rows_label = Label(
-            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
-        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
-            table, frame)).grid(row=6, column=0, pady=10)
-        no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
-            table, conditions)).grid(row=6, column=1, pady=10)
-
-    def between(table, frame, column_name, start_value, end_value):
-        global conditions
-        database_connection = DatabaseConnection(table)
-        conditions.append(database_connection.between(
-            column_name, start_value, end_value))
-        database_connection.close_connection()
-
-        for widget in frame.winfo_children():
-            widget.destroy()
-
-        drop_rows_label = Label(
-            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
-        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
-            table, frame)).grid(row=6, column=0, pady=10)
-        no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
-            table, conditions)).grid(row=6, column=1, pady=10)
-
-    def not_equal(table, frame, column_name, value):
-        global conditions
-        database_connection = DatabaseConnection(table)
-        conditions.append(database_connection.not_equal(column_name, value))
-        database_connection.close_connection()
-
-        for widget in frame.winfo_children():
-            widget.destroy()
-
-        drop_rows_label = Label(
-            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
-        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
-            table, frame)).grid(row=6, column=0, pady=10)
-        no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
-            table, conditions)).grid(row=6, column=1, pady=10)
-
-    def not_null(table, frame, column_name):
-        global conditions
-        database_connection = DatabaseConnection(table)
-        conditions.append(database_connection.not_null(column_name))
-        database_connection.close_connection()
-
-        for widget in frame.winfo_children():
-            widget.destroy()
-
-        drop_rows_label = Label(
-            frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
-        yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: condition_creator(
-            table, frame)).grid(row=6, column=0, pady=10)
-        no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
-            table, conditions)).grid(row=6, column=1, pady=10)
-
-    def construct_condition(table, frame, column_name, comparator):
-        submit_btn.destroy()
-
-        if comparator == 'Equals':
-            equal_value_label = Label(
-                frame, text='What values would you like to compare?', font=myFont).grid(row=8, columnspan=2)
-            equal_value_entry = Entry(frame, width=15, font=myFont)
-            equal_value_entry.grid(row=9, columnspan=2)
-            submit_condition_btn = Button(frame, text='Submit', font=myFont,
-                                          command=lambda: equals(table, frame, column_name, equal_value_entry.get())).grid(row=10, columnspan=2, pady=10)
-
-        elif comparator == 'Greater Than':
-            greater_than_value_label = Label(
-                frame, text='What value would you like to compare?', font=myFont).grid(row=8, columnspan=2)
-            greater_than_value_entry = Entry(frame, width=15, font=myFont)
-            greater_than_value_entry.grid(row=9, columnspan=2)
-            submit_condition_btn = Button(frame, text='Submit', font=myFont,
-                                          command=lambda: greater_than(table, frame, column_name, greater_than_value_entry.get())).grid(row=10, columnspan=2, pady=10)
-
-        elif comparator == 'Less Than':
-            less_than_value_label = Label(
-                frame, text='What value would you like to compare?', font=myFont).grid(row=8, columnspan=2)
-            less_than_value_entry = Entry(frame, width=15, font=myFont)
-            less_than_value_entry.grid(row=9, columnspan=2)
-            submit_condition_btn = Button(frame, text='Submit', font=myFont,
-                                          command=lambda: less_than(table, frame, column_name, less_than_value_entry.get())).grid(row=10, columnspan=2, pady=10)
-
-        elif comparator == 'Between':
-            between_starting_value_label = Label(
-                frame, text='What starting value would you like to use?', font=myFont).grid(row=8, columnspan=2)
-            between_starting_value_entry = Entry(frame, width=15, font=myFont)
-            between_starting_value_entry.grid(row=9, columnspan=2)
-            between_ending_value_label = Label(
-                frame, text='What ending value would you like to use?', font=myFont).grid(row=10, columnspan=2)
-            between_ending_value_entry = Entry(frame, width=15, font=myFont)
-            between_ending_value_entry.grid(row=11, columnspan=2)
-            submit_condition_btn = Button(frame, text='Submit', font=myFont,
-                                          command=lambda: between(table, frame, column_name, between_starting_value_entry.get(), between_ending_value_entry.get())).grid(row=12, columnspan=2, pady=10)
-
-        elif comparator == 'Not Equal':
-            not_equal_value_label = Label(
-                frame, text='What value would you like to compare?', font=myFont).grid(row=8, columnspan=2)
-            not_equal_value_entry = Entry(frame, width=15, font=myFont)
-            not_equal_value_entry.grid(row=9, columnspan=2)
-            submit_condition_btn = Button(frame, text='Submit', font=myFont,
-                                          command=lambda: not_equal(table, frame, column_name, not_equal_value_entry.get())).grid(row=10, columnspan=2, pady=10)
-
-        elif comparator == 'Not Null':
-            not_null(table, frame, column_name)
-
-    for widget in frame.winfo_children():
-        widget.destroy()
-
-    column_name_label = Label(
-        frame, text='What column would you like to compare?', font=myFont).grid(row=4, columnspan=2)
-    column_name_entry = Entry(frame, width=15, font=myFont)
-    column_name_entry.grid(row=5, columnspan=2)
-
-    comparator = StringVar()
-    comparator.set('Equals')
-
-    dropdown_label = Label(
-        frame, text='What comparator would you like to use?', font=myFont).grid(row=6, columnspan=2)
-    comparator_dropdown = OptionMenu(
-        frame, comparator, 'Equals', 'Greater Than', 'Less Than', 'Between', 'Not Equal', 'Not Null')
-    comparator_dropdown.grid(row=7, columnspan=2)
-
-    submit_btn = Button(frame, text='Submit', font=myFont,
-                        command=lambda: construct_condition(table, frame, column_name_entry.get(), comparator.get()))
-    submit_btn.grid(row=8, columnspan=2, pady=10)
-
-
 def drop_rows_selection(table, delete_frame):
     for widget in delete_frame.winfo_children():
         widget.destroy()
@@ -474,7 +541,7 @@ def drop_rows_selection(table, delete_frame):
     drop_rows_label = Label(
         delete_frame, text='Would you like to include more conditions?', font=myFont).grid(row=5, columnspan=2)
     yes_btn = Button(delete_frame, text='Yes', font=myFont, command=lambda: condition_creator(
-        table, delete_frame)).grid(row=6, column=0, pady=10)
+        table, delete_frame, 'drop_rows')).grid(row=6, column=0, pady=10)
     no_btn = Button(delete_frame, text='No', font=myFont, command=lambda: drop_rows(
         table, None)).grid(row=6, column=1, pady=10)
 
@@ -518,7 +585,19 @@ def query(table):
 def update(table):
     for ele in root.winfo_children():
         ele.destroy()
-    lbl = Label(root, text='You have chosen to update').grid(row=0, column=0)
+
+    root.rowconfigure(0, weight=0)
+
+    update_frame = Frame(root)
+    update_frame.grid(row=4, columnspan=2, sticky="nesw")
+    update_frame.columnconfigure(0, weight=1)
+    update_frame.columnconfigure(1, weight=1)
+
+    main_lbl = Label(update_frame, text='Please select a CSV file containing rows to update:',
+                     font=myFont).grid(row=0, columnspan=2)
+
+    select_btn = Button(update_frame, text='Select', font=myFont, command=lambda: get_file(
+        table, 'update_rows', update_frame)).grid(row=1, columnspan=2, pady=10)
 
 
 def main_program(table):
@@ -562,7 +641,7 @@ def main_program(table):
     save_btn = Button(frmMain, text='Save', font=myFont, command=lambda: save(
         table)).grid(row=6, column=0, pady=5)
     save_btn_lbl = Label(
-        frmMain, text='Save the table as a .csv', font=myFont).grid(row=6, column=1)
+        frmMain, text='Save the table as a .csv file', font=myFont).grid(row=6, column=1)
 
     update_btn = Button(frmMain, text='Update', font=myFont, command=lambda: update(
         table)).grid(row=7, column=0, pady=5)
