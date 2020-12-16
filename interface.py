@@ -180,6 +180,91 @@ def update_rows(table, conditions, filepath):
     database_connection.close_connection()
 
 
+def query_data(table, frame, conditions=None, limit=None, order=None):
+    if limit is not None:
+        limit_int = int(limit)
+    else:
+        limit_int = None
+
+    database_connection = DatabaseConnection(table)
+    df = database_connection.query(conditions, order, limit_int)
+    database_connection.close_connection()
+
+    print(df)
+
+
+def create_order_by_statement(table, frame, column_name, direction, conditions=None, limit=None):
+    database_connection = DatabaseConnection(table)
+
+    if direction == 'Ascending':
+        order = database_connection.asc(column_name)
+    elif direction == 'Descending':
+        order = database_connection.desc(column_name)
+
+    database_connection.close_connection()
+
+    query_data(table, frame, conditions, limit, order)
+
+
+def construct_order_by(table, frame, conditions=None, limit=None):
+    for widget in frame.winfo_children():
+        widget.destroy()
+
+    order_query_label = Label(
+        frame, text='What column would you like to order the data by?', font=myFont).grid(row=1, columnspan=2)
+    order_entry = Entry(frame, width=15, font=myFont)
+    order_entry.grid(row=2, columnspan=2)
+
+    order_direction = StringVar()
+    order_direction.set('Ascending')
+
+    order_asc_radio_btn = Radiobutton(
+        frame, text='Ascending', variable=order_direction, value='Ascending', font=myFont).grid(row=3, column=0)
+    order_desc_radio_btn = Radiobutton(
+        frame, text='Descending', variable=order_direction, value='Descending', font=myFont).grid(row=3, column=1)
+
+    submit_btn = Button(frame, text='Submit', font=myFont, command=lambda: create_order_by_statement(
+        table, frame, order_entry.get(), order_direction.get(), conditions, limit)).grid(row=4, columnspan=2)
+
+
+def order_by_creator(table, frame, conditions=None, limit=None):
+    for widget in frame.winfo_children():
+        widget.destroy()
+
+    limit_result_label = Label(
+        frame, text='Would you like to order your results?', font=myFont).grid(row=0, columnspan=2)
+    yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: construct_order_by(
+        table, frame, conditions, limit)).grid(row=1, column=0, pady=10)
+    no_btn = Button(frame, text='No', font=myFont, command=lambda: query_data(
+        table, frame, conditions, limit)).grid(row=1, column=1, pady=10)
+
+
+def construct_limit(table, frame, conditions=None):
+    for widget in frame.winfo_children():
+        widget.destroy()
+
+    limit_warning_label = Label(
+        frame, text='Please only input an integer value', font=myFont).grid(row=0, columnspan=2)
+    limit_query_label = Label(
+        frame, text='How many results would you like returned?', font=myFont).grid(row=1, columnspan=2)
+    limit_entry = Entry(frame, width=15, font=myFont)
+    limit_entry.grid(row=2, columnspan=2)
+    submit_btn = Button(frame, text='Submit', font=myFont, command=lambda: order_by_creator(
+        table, frame, conditions, limit_entry.get())).grid(row=3, columnspan=2)
+
+
+def limit_creator(table, frame, conditions):
+    for widget in frame.winfo_children():
+        widget.destroy()
+
+    limit_result_label = Label(
+        frame, text='Would you like to limit your results?', font=myFont).grid(row=0, columnspan=2)
+    yes_btn = Button(frame, text='Yes', font=myFont, command=lambda: construct_limit(
+        table, frame, conditions)).grid(row=1, column=0, pady=10)
+    no_btn = Button(frame, text='No', font=myFont, command=lambda: order_by_creator(
+        table, frame, conditions)).grid(row=1, column=1, pady=10)
+
+
 def condition_creator(table, frame, type, filepath=None):
     def equals(table, frame, column_name, values_str, type, filepath=None):
         global conditions
@@ -198,6 +283,9 @@ def condition_creator(table, frame, type, filepath=None):
         if type == 'drop_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
                 table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'query':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: limit_creator(
+                table, frame, conditions)).grid(row=6, column=1, pady=10)
         elif type == 'update_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
                 table, conditions, filepath)).grid(row=6, column=1, pady=10)
@@ -218,6 +306,9 @@ def condition_creator(table, frame, type, filepath=None):
         if type == 'drop_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
                 table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'query':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: limit_creator(
+                table, frame, conditions)).grid(row=6, column=1, pady=10)
         elif type == 'update_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
                 table, conditions, filepath)).grid(row=6, column=1, pady=10)
@@ -238,6 +329,9 @@ def condition_creator(table, frame, type, filepath=None):
         if type == 'drop_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
                 table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'query':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: limit_creator(
+                table, frame, conditions)).grid(row=6, column=1, pady=10)
         elif type == 'update_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
                 table, conditions, filepath)).grid(row=6, column=1, pady=10)
@@ -259,6 +353,9 @@ def condition_creator(table, frame, type, filepath=None):
         if type == 'drop_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
                 table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'query':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: limit_creator(
+                table, frame, conditions)).grid(row=6, column=1, pady=10)
         elif type == 'update_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
                 table, conditions, filepath)).grid(row=6, column=1, pady=10)
@@ -279,6 +376,9 @@ def condition_creator(table, frame, type, filepath=None):
         if type == 'drop_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
                 table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'query':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: limit_creator(
+                table, frame, conditions)).grid(row=6, column=1, pady=10)
         elif type == 'update_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
                 table, conditions, filepath)).grid(row=6, column=1, pady=10)
@@ -299,6 +399,9 @@ def condition_creator(table, frame, type, filepath=None):
         if type == 'drop_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: drop_rows(
                 table, conditions)).grid(row=6, column=1, pady=10)
+        elif type == 'query':
+            no_btn = Button(frame, text='No', font=myFont, command=lambda: limit_creator(
+                table, frame, conditions)).grid(row=6, column=1, pady=10)
         elif type == 'update_rows':
             no_btn = Button(frame, text='No', font=myFont, command=lambda: update_rows(
                 table, conditions, filepath)).grid(row=6, column=1, pady=10)
@@ -353,7 +456,7 @@ def condition_creator(table, frame, type, filepath=None):
         elif comparator == 'Not Null':
             not_null(table, frame, column_name, type, filepath)
 
-    if type == 'drop_rows':
+    if type == 'drop_rows' or type == 'query':
         for widget in frame.winfo_children():
             widget.destroy()
 
@@ -374,6 +477,7 @@ def condition_creator(table, frame, type, filepath=None):
         submit_btn = Button(frame, text='Submit', font=myFont,
                             command=lambda: construct_condition(table, frame, column_name_entry.get(), comparator.get(), type))
         submit_btn.grid(row=8, columnspan=2, pady=10)
+
     elif type == 'update_rows':
         for widget in frame.winfo_children():
             widget.destroy()
@@ -579,7 +683,22 @@ def delete(table):
 def query(table):
     for ele in root.winfo_children():
         ele.destroy()
-    lbl = Label(root, text='You have chosen to query').grid(row=0, column=0)
+
+    root.rowconfigure(0, weight=0)
+
+    query_frame = Frame(root)
+    query_frame.grid(row=4, columnspan=2, sticky="nesw")
+    query_frame.columnconfigure(0, weight=1)
+    query_frame.columnconfigure(1, weight=1)
+
+    query_warning = Label(
+        query_frame, text='Without conditions the program will return all data', font=myFont).grid(row=0, columnspan=2)
+    query_label = Label(
+        query_frame, text='Would you like to include more conditions?', font=myFont).grid(row=1, columnspan=2)
+    yes_btn = Button(query_frame, text='Yes', font=myFont, command=lambda: condition_creator(
+        table, query_frame, 'query')).grid(row=2, column=0, pady=10)
+    no_btn = Button(query_frame, text='No', font=myFont, command=lambda: limit_creator(
+        table, query_frame, None)).grid(row=2, column=1, pady=10)
 
 
 def update(table):
