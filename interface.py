@@ -3,6 +3,7 @@ import pandas as pd
 import datetime as dt
 from tkinter import *
 from tkinter import filedialog
+from tkinter import ttk
 import tkinter.font as font
 
 from Database_Class import DatabaseConnection
@@ -190,7 +191,39 @@ def query_data(table, frame, conditions=None, limit=None, order=None):
     df = database_connection.query(conditions, order, limit_int)
     database_connection.close_connection()
 
-    print(df)
+    for widget in root.winfo_children():
+        widget.destroy()
+
+    root.pack_propagate(False)
+    root.resizable(0, 0)
+
+    data_frame = LabelFrame(root, text="Results", font=myFont)
+    data_frame.place(height=450, width=450)
+
+    data_treeview = ttk.Treeview(data_frame)
+    data_treeview.place(relheight=1, relwidth=1)
+
+    treescrolly = Scrollbar(data_frame, orient="vertical",
+                            command=data_treeview.yview)
+    treescrollx = Scrollbar(
+        data_frame, orient="horizontal", command=data_treeview.xview)
+    data_treeview.configure(xscrollcommand=treescrollx.set,
+                            yscrollcommand=treescrolly.set)
+    treescrollx.pack(side="bottom", fill="x")
+    treescrolly.pack(side="right", fill="y")
+
+    data_treeview["column"] = list(df.columns)
+    data_treeview["show"] = "headings"
+
+    for column in data_treeview["columns"]:
+        # let the column heading = column name
+        data_treeview.heading(column, text=column)
+
+    # turns the dataframe into a list of lists
+    df_rows = df.to_numpy().tolist()
+
+    for row in df_rows:
+        data_treeview.insert("", "end", values=row)
 
 
 def create_order_by_statement(table, frame, column_name, direction, conditions=None, limit=None):
